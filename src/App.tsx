@@ -1,35 +1,84 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
+import {useEffect, useState} from "react";
 import './App.css'
+import ExtraSearch from "./ExtraSearch.tsx";
+import PokemonList from "./PokemonList.tsx";
+import Search from "./Search.tsx";
+import PokemonCard from "./PokemonCard.tsx";
+
 
 function App() {
-  const [count, setCount] = useState(0)
+   const [data, setData] = useState([]);
+   const [pokemon, setPokemon] = useState(null);
+   const [showModal, setShowModal] = useState(false);
 
-  return (
-    <>
-      <div>
-        <a href="https://vitejs.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+   useEffect(() => {
+      fetch('http://localhost:3000/api/pokemon')
+         .then(response => response.json())
+         .then(json => setData(json))
+         .catch(error => console.log(error));
+   }, []);
+
+   const search = (val) => {
+      fetch('http://localhost:3000/api/pokemon/' + val)
+         .then(response => response.json())
+         .then(json => {
+            if (Array.isArray(json)) {
+               return setData(json)
+            } else {
+               return setData([json])
+            }
+         })
+         .catch(error => console.log(error));
+   }
+
+   const searchByTypeAbility = (type: string, ability: string) => {
+      let typeQ = '';
+      let abilityQ = '';
+
+      if (type.length > 0) {
+         typeQ = `type=${type}`;
+      }
+
+      if (ability.length > 0) {
+         abilityQ = `ability=${ability}`;
+      }
+
+
+      fetch(`http://localhost:3000/api/pokemon/search?${typeQ}&${abilityQ}`)
+         .then(response => response.json())
+         .then(json => {
+            if (Array.isArray(json)) {
+               return setData(json)
+            } else {
+               return setData([json])
+            }
+         })
+         .catch(error => console.log(error));
+   }
+
+   const searchById = (id) => {
+      fetch('http://localhost:3000/api/pokemon/' + id)
+         .then(response => response.json())
+         .then(json => {
+            setShowModal(true)
+            return setPokemon(json)
+         })
+         .catch(error => console.log(error));
+   }
+
+   return (
+      <>
+         <header>
+            <img src="/pokemon_logo.svg" alt='Pokemon'/>
+         </header>
+         <div>
+            {showModal && <PokemonCard pokemon={pokemon} handleShowModal={setShowModal}/>}
+            <Search handleClick={search}/>
+            <ExtraSearch handleClick={searchByTypeAbility}/>
+            <PokemonList pokemonList={data} handleOnClick={searchById}/>
+         </div>
+      </>
+   )
 }
 
 export default App
